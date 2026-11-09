@@ -1,0 +1,333 @@
+/* Две темы: белая и тёмная (#000009 + жёлтый Monkey Business). Переключаются через data-theme на <html> */
+:root, :root[data-theme="light"] {
+  --bg: #ffffff;
+  --ink: #111111;
+  --muted: #737373;
+  --card: #f0f0f0;
+  --line: #e6e6e6;
+  --logo: #111111;
+  --accent: #fde74c;          /* фирменный жёлтый */
+  --accent-ink: #111111;      /* на белом жёлтый текст не читается: акцент - плашка */
+  --marker: var(--accent);
+  --cta-bg: #111111;
+  --cta-ink: #ffffff;
+  --soft-bg: #f0f0f0;
+  --ring: rgba(17, 17, 17, .35);
+}
+:root[data-theme="dark"] {
+  --bg: #000009;
+  --ink: #ffffff;
+  --muted: #8c8c96;
+  --card: #15151c;
+  --line: #24242c;
+  --logo: #fde74c;
+  --accent-ink: #fde74c;      /* на тёмном акцент - жёлтый текст, как в фирменных макетах */
+  --marker: transparent;
+  --cta-bg: #fde74c;
+  --cta-ink: #000009;
+  --soft-bg: #1c1c24;
+  --ring: rgba(255, 255, 255, .4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  /* временно Inter вместо ABC Favorit Pro */
+  font-family: "Inter Tight", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  cursor: none;
+  touch-action: none;
+  /* иначе при перетаскивании облака браузер выделяет текст страницы */
+  -webkit-user-select: none; user-select: none;
+  transition: background .4s ease, color .4s ease;
+}
+@media (hover: none) { body { cursor: auto; } }
+
+.stage { position: fixed; inset: 0; z-index: 1; transition: opacity .5s ease; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+
+.pill {
+  font: 500 15px/1 "Inter Tight", sans-serif;
+  text-decoration: none; border: 0; border-radius: 99px; padding: 14px 22px; cursor: none;
+  transition: background .2s, color .2s, opacity .2s;
+}
+.pill--dark { background: var(--ink); color: var(--bg); }
+.pill--cta { background: var(--cta-bg); color: var(--cta-ink); }
+.pill--dark:hover, .pill--cta:hover { opacity: .85; }
+
+.top {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: clamp(28px, 2.7vw, 52px) clamp(24px, 2.9vw, 56px); pointer-events: none;
+}
+.top > * { pointer-events: auto; }
+/* логотип в две строки, без значка */
+.logo { display: flex; flex-direction: column; gap: clamp(6px, .48vw, 10px); color: var(--logo); cursor: none; transition: color .4s ease; }
+.logo svg { display: block; height: clamp(30px, 2.63vw, 51px); width: auto; }
+.top__right { display: flex; align-items: center; gap: 18px; }
+.theme-toggle {
+  border: 0; background: none; color: var(--muted); cursor: none;
+  font: 500 13px/1 "Inter Tight", sans-serif; text-transform: uppercase; letter-spacing: .08em;
+}
+.theme-toggle:hover { color: var(--ink); }
+
+/* левая колонка снизу: заголовок, описание, клиенты */
+.intro {
+  position: fixed; z-index: 20; pointer-events: none;
+  left: clamp(24px, 2.9vw, 56px); bottom: clamp(28px, 2.9vw, 56px);
+  width: max-content; max-width: calc(100vw - 2 * clamp(24px, 2.9vw, 56px));
+}
+.headline {
+  font: 900 clamp(56px, 8.4vw, 180px)/.86 "Inter Tight", sans-serif;
+  text-transform: uppercase; letter-spacing: -.045em;
+}
+.headline__accent {
+  color: var(--accent-ink); background: var(--marker);
+  padding: 0 .12em; margin-left: -.12em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+/* в тёмной теме плашки нет: и отступ под неё не нужен, иначе строка съезжает левее описания */
+html[data-theme="dark"] .headline__accent { padding: 0; margin-left: 0; }
+.desc { margin-top: clamp(18px, 1.6vw, 32px); max-width: none; white-space: nowrap; font-size: clamp(15px, 1.04vw, 20px); line-height: 1.4; color: var(--muted); }
+
+.hint {
+  position: fixed; z-index: 20; right: clamp(24px, 2.9vw, 56px); bottom: clamp(28px, 2.9vw, 56px);
+  font: 500 12px/1 "Inter Tight", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  pointer-events: none;
+}
+
+/* ---------- Вариант C: заголовок одной строкой на всю ширину внизу, описание над ним, подсказка под кнопкой ---------- */
+@media (min-width: 701px) {
+  html[data-layout="c"] .intro { right: clamp(24px, 2.9vw, 56px); width: auto; max-width: none; display: flex; flex-direction: column-reverse; }
+  html[data-layout="c"] .headline { white-space: nowrap; }
+  html[data-layout="c"] .headline br { display: none; }
+  html[data-layout="c"] .desc { margin: 0 0 clamp(20px, 2vw, 40px); }
+}
+
+/* ---------- Вариант E: кольцо из кейсов, заголовок в его пустом центре, описание внизу по центру ---------- */
+html[data-layout="e"] .intro {
+  inset: 0; width: auto; max-width: none; padding-bottom: 4vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+html[data-layout="e"] .headline { font-size: clamp(44px, 5.8vw, 124px); }
+html[data-layout="e"] .headline__accent { margin-left: 0; }
+html[data-layout="e"] .desc {
+  position: absolute; left: 50%; bottom: clamp(28px, 2.9vw, 56px); translate: -50% 0; margin: 0; text-align: center;
+}
+@media (max-width: 700px) {
+  html[data-layout="e"] .intro { padding-bottom: 12vh; }
+  html[data-layout="e"] .headline { font-size: 12.5vw; }
+  html[data-layout="e"] .desc { bottom: 20px; }
+}
+
+/* Курсор-объектив: кольцо = граница линзы, внутри которой облако проявляется в цвете */
+.cursor {
+  position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none;
+  translate: -400px -400px;
+}
+.cursor__ring, .cursor__dot { position: absolute; left: 0; top: 0; border-radius: 50%; }
+.cursor__ring {
+  width: 240px; height: 240px; margin: -120px 0 0 -120px;
+  border: 1px solid var(--ring);
+  transition: scale .5s cubic-bezier(.2, .8, .2, 1), opacity .3s;
+}
+.cursor__dot {
+  width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--ink);
+  transition: scale .3s cubic-bezier(.2, .8, .2, 1);
+}
+.cursor.is-drag .cursor__ring { scale: .88; }
+.cursor.is-hover .cursor__ring { scale: .05; opacity: 0; }
+.cursor.is-hover .cursor__dot { scale: 1.5; }
+body.is-open .cursor__ring { opacity: 0; }
+@media (hover: none), (pointer: coarse) { .cursor, .focus { display: none; } }
+
+/* Видоискатель: уголки защёлкиваются на карточке под курсором */
+.focus {
+  position: fixed; left: 0; top: 0; z-index: 55; pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+}
+.focus.is-on { opacity: 1; }
+.focus i { position: absolute; width: 16px; height: 16px; border: 0 solid var(--ink); }
+.focus i:nth-child(1) { left: 0; top: 0; border-width: 2px 0 0 2px; }
+.focus i:nth-child(2) { right: 0; top: 0; border-width: 2px 2px 0 0; }
+.focus i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 2px 2px; }
+.focus i:nth-child(4) { right: 0; bottom: 0; border-width: 0 2px 2px 0; }
+.focus__label {
+  position: absolute; left: 0; bottom: calc(100% + 8px); white-space: nowrap;
+  background: var(--ink); color: var(--bg); border-radius: 99px; padding: 7px 11px;
+  font: 700 11px/1 "Inter Tight", sans-serif; text-transform: uppercase; letter-spacing: .04em;
+}
+
+/* Открытый кейс: слева кадры, справа колонка с информацией */
+.viewer { position: fixed; inset: 0; z-index: 50; pointer-events: none; --info-w: min(380px, 30vw); }
+/* сплошной фон: главная сквозь кейс не просвечивает и не мешает читать */
+.viewer::before {
+  content: ""; position: absolute; inset: 0; background: var(--bg);
+  opacity: 0; transition: opacity .45s ease;
+}
+body.is-open .viewer::before { opacity: 1; }
+.viewer__media {
+  position: absolute; overflow: hidden; border-radius: 2px; background: var(--card);
+  transform-origin: 0 0; visibility: hidden; cursor: none;
+  transition: transform .7s cubic-bezier(.7, 0, .2, 1), opacity .22s ease;
+}
+.viewer__media .frame {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  opacity: 0; transition: opacity .45s ease;
+}
+.viewer__media .frame.is-on { opacity: 1; }
+
+.viewer__info {
+  position: absolute; top: var(--viewer-top, 104px); right: 32px; bottom: 32px; width: var(--info-w);
+  display: flex; flex-direction: column; gap: 22px; overflow-y: auto; overscroll-behavior: contain;
+  transition: opacity .22s ease;
+}
+.viewer__info > * { opacity: 0; translate: 0 12px; transition: opacity .4s ease, translate .5s cubic-bezier(.2, .8, .2, 1); }
+body.is-open .viewer__info > * { opacity: 1; translate: 0 0; }
+body.is-open .viewer__info > *:nth-child(1) { transition-delay: .35s; }
+body.is-open .viewer__info > *:nth-child(2) { transition-delay: .4s; }
+body.is-open .viewer__info > *:nth-child(3) { transition-delay: .45s; }
+body.is-open .viewer__info > *:nth-child(4) { transition-delay: .5s; }
+body.is-open .viewer__info > *:nth-child(5) { transition-delay: .55s; }
+body.is-open .viewer__info > *:nth-child(6) { transition-delay: .6s; }
+body.is-open .viewer__info > *:nth-child(7) { transition-delay: .65s; }
+.viewer.is-switching .viewer__info, .viewer.is-switching .viewer__media { opacity: 0; }
+
+.viewer__idx { font-size: 13px; font-weight: 700; color: var(--muted); }
+.viewer__title { font: 800 clamp(30px, 3.4vw, 54px)/.92 "Inter Tight", sans-serif; text-transform: uppercase; letter-spacing: -.025em; }
+.viewer__facts { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
+.viewer__facts div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; font-size: 14px; }
+.viewer__facts dt { color: var(--muted); font-weight: 500; }
+.viewer__facts dd { font-weight: 700; }
+.viewer__desc { font-size: 16px; line-height: 1.45; }
+.viewer__results { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+.viewer__results b { display: block; font: 800 clamp(22px, 2vw, 30px)/1 "Inter Tight", sans-serif; letter-spacing: -.02em; }
+.viewer__results span { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+.viewer__frames { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 6px; }
+.viewer__frames button {
+  position: relative; width: 56px; height: 42px; border: 0; padding: 0; border-radius: 2px; cursor: none;
+  background: var(--card) center / cover no-repeat; opacity: .4; transition: opacity .2s;
+}
+/* активный кадр: полная яркость и тонкая полоска снизу */
+.viewer__frames button::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px;
+  background: var(--ink); scale: 0 1; transform-origin: 0 50%; transition: scale .3s ease;
+}
+.viewer__frames button.is-on { opacity: 1; }
+.viewer__frames button.is-on::after { scale: 1 1; }
+.viewer__frames button:hover { opacity: .8; }
+.viewer__nav { display: flex; gap: 8px; margin-top: auto; }
+.pill--light { background: var(--soft-bg); color: var(--ink); }
+.pill--light:hover { opacity: .8; }
+
+.viewer__close {
+  position: absolute; top: 28px; right: 32px; width: 56px; height: 56px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; opacity: 0; transition: opacity .3s ease, transform .3s ease;
+}
+/* крестик из двух линий: без иконок-картинок, цвет из темы */
+.viewer__close::before, .viewer__close::after { content: ""; grid-area: 1 / 1; width: 22px; height: 2px; border-radius: 2px; background: currentColor; rotate: 45deg; }
+.viewer__close::after { rotate: -45deg; }
+.viewer__close:hover { transform: rotate(90deg); }
+body.is-open .viewer, body.is-open .viewer__info, body.is-open .viewer__close, body.is-open .viewer__modes { pointer-events: auto; }
+
+/* ---------- Переключатель вида кейса ---------- */
+.viewer__modes {
+  position: absolute; top: 36px; left: 50%; translate: -50% 0; z-index: 3;
+  display: flex; gap: 2px; padding: 4px; border-radius: 99px; background: var(--soft-bg);
+  opacity: 0; transition: opacity .3s ease;
+}
+body.is-open .viewer__modes { opacity: 1; transition-delay: .45s; }
+.viewer__modes button {
+  border: 0; background: none; cursor: none; padding: 10px 14px; border-radius: 99px;
+  font: 500 13px/1 "Inter Tight", sans-serif; color: var(--muted); transition: background .2s, color .2s;
+}
+.viewer__modes button:hover { color: var(--ink); }
+.viewer__modes button.is-on { background: var(--ink); color: var(--bg); }
+.viewer__info, .viewer__close { z-index: 2; }
+/* текстовые блоки поверх кадра не мешают кликать по самому кадру */
+.viewer[data-mode="cinema"] .viewer__info, .viewer[data-mode="poster"] .viewer__info, .viewer[data-mode="strip"] .viewer__info { pointer-events: none; }
+.viewer[data-mode="cinema"] .viewer__info > *, .viewer[data-mode="poster"] .viewer__info > *, .viewer[data-mode="strip"] .viewer__info > * { pointer-events: auto; }
+.viewer__media { transition: transform .7s cubic-bezier(.7, 0, .2, 1), opacity .22s ease, translate .5s cubic-bezier(.2, .8, .2, 1); }
+
+/* ---------- Cinema: кадр на весь экран, название крупно внизу поверх кадра ---------- */
+.viewer[data-mode="cinema"] .viewer__media { border-radius: 0; }
+.viewer[data-mode="cinema"]::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .45s ease .2s;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0) 24%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, .78));
+}
+body.is-open .viewer[data-mode="cinema"]::after { opacity: 1; }
+body.is-open:has(.viewer[data-mode="cinema"]) .logo { color: #fff; }
+.viewer[data-mode="cinema"] .viewer__info {
+  --ink: #fff; --muted: rgba(255, 255, 255, .72); --line: rgba(255, 255, 255, .24); --soft-bg: rgba(255, 255, 255, .16); --bg: #000;
+  top: auto; left: 40px; right: 40px; bottom: 40px; width: auto; overflow: visible; color: var(--ink);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, var(--info-w)); column-gap: 64px; row-gap: 16px; align-items: end;
+  grid-template-areas: "idx facts" "title facts" "title results" "desc frames" "desc nav";
+}
+.viewer[data-mode="cinema"] .viewer__title { font-size: clamp(56px, 8vw, 168px); font-weight: 900; line-height: .84; letter-spacing: -.045em; }
+.viewer[data-mode="cinema"] .viewer__desc { max-width: 560px; }
+
+/* ---------- Poster: название во всю ширину сверху, кадр под ним, факты колонкой справа ---------- */
+.viewer[data-mode="poster"] .viewer__info {
+  top: var(--viewer-top, 104px); left: 32px; right: 32px; bottom: 32px; width: auto; overflow: visible;
+  display: grid; grid-template-columns: minmax(0, 1fr) var(--info-w); grid-auto-rows: min-content; column-gap: 56px; row-gap: 20px; align-content: start;
+}
+.viewer[data-mode="poster"] .viewer__info > * { grid-column: 2; }
+.viewer[data-mode="poster"] .viewer__info > .viewer__title { grid-column: 1 / -1; font-size: clamp(64px, 10vw, 220px); font-weight: 900; line-height: .84; letter-spacing: -.05em; }
+
+/* ---------- Split: кадр на правую половину экрана, текст слева под логотипом ---------- */
+.viewer[data-mode="split"] .viewer__media { border-radius: 0; }
+.viewer[data-mode="split"] .viewer__info { top: var(--viewer-top, 104px); left: 32px; right: calc(50% + 56px); width: auto; bottom: 32px; }
+.viewer[data-mode="split"] .viewer__title { font-size: clamp(48px, 5.6vw, 124px); font-weight: 900; line-height: .86; letter-spacing: -.045em; }
+
+/* ---------- Strip: все кадры кампании лентой, тянется мышью, текст строкой внизу ---------- */
+.viewer[data-mode="strip"] .viewer__media { overflow: visible; background: none; display: flex; gap: 16px; }
+.viewer[data-mode="strip"] .viewer__media .frame { position: static; flex: none; width: var(--fw); height: 100%; opacity: 1; border-radius: 2px; }
+.viewer[data-mode="strip"] .viewer__frames { display: none; }
+.viewer[data-mode="strip"] .viewer__info {
+  top: auto; left: 32px; right: 32px; bottom: 32px; width: auto; overflow: visible;
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; column-gap: 40px; row-gap: 12px; align-items: end;
+  grid-template-areas: "idx facts results nav" "title facts results nav" "desc facts results nav";
+}
+.viewer[data-mode="strip"] .viewer__title { font-size: clamp(40px, 4.6vw, 96px); font-weight: 900; line-height: .86; letter-spacing: -.045em; }
+
+/* имена областей сетки - только там, где сетка с областями */
+.viewer[data-mode="cinema"] .viewer__idx, .viewer[data-mode="strip"] .viewer__idx { grid-area: idx; }
+.viewer[data-mode="cinema"] .viewer__title, .viewer[data-mode="strip"] .viewer__title { grid-area: title; }
+.viewer[data-mode="cinema"] .viewer__facts, .viewer[data-mode="strip"] .viewer__facts { grid-area: facts; }
+.viewer[data-mode="cinema"] .viewer__desc, .viewer[data-mode="strip"] .viewer__desc { grid-area: desc; }
+.viewer[data-mode="cinema"] .viewer__results, .viewer[data-mode="strip"] .viewer__results { grid-area: results; }
+.viewer[data-mode="cinema"] .viewer__frames { grid-area: frames; }
+.viewer[data-mode="cinema"] .viewer__nav, .viewer[data-mode="strip"] .viewer__nav { grid-area: nav; margin-top: 0; }
+body.is-open .viewer__close { opacity: 1; transition-delay: .45s; }
+/* логотип остаётся поверх фона кейса; кнопку контакта прячем целиком, чтобы не перехватывала клики у Close */
+body.is-open .top { z-index: 52; }
+body.is-open .top__right, body.is-open .top__right * { pointer-events: none; }
+body.is-open .top .pill, body.is-open .theme-toggle { opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; }
+body.is-open .intro, body.is-open .hint { opacity: 0; transition: opacity .3s; }
+
+@media (max-width: 700px) {
+  .top { padding: 18px 16px; }
+  .logo svg { height: 26px; }
+  .top__right { flex-direction: column-reverse; align-items: flex-end; gap: 10px; }
+  .pill { font-size: 13px; padding: 11px 16px; }
+  .intro { left: 16px; right: 16px; bottom: 20px; width: auto; }
+  .headline { font-size: clamp(48px, 16vw, 76px); }
+  .desc { font-size: 14px; }
+  .hint { display: none; }
+  .viewer__info { top: var(--info-top, 55vh); left: 16px; right: 16px; bottom: 16px; width: auto; gap: 18px; }
+  .viewer__nav { margin-top: 4px; padding-bottom: 8px; }
+  .viewer__close { top: 18px; right: 16px; width: 48px; height: 48px; }
+  .viewer__modes { top: auto; bottom: 14px; }
+  .viewer__modes button { padding: 9px 10px; font-size: 12px; }
+  .viewer__info { bottom: 70px; }
+  .viewer[data-mode="cinema"] .viewer__info, .viewer[data-mode="strip"] .viewer__info {
+    left: 16px; right: 16px; bottom: 70px; grid-template-columns: 1fr; column-gap: 0;
+    grid-template-areas: "idx" "title" "results" "frames" "nav";
+  }
+  .viewer[data-mode="cinema"] .viewer__facts, .viewer[data-mode="cinema"] .viewer__desc,
+  .viewer[data-mode="strip"] .viewer__facts, .viewer[data-mode="strip"] .viewer__desc { display: none; }
+  .viewer[data-mode="cinema"] .viewer__title, .viewer[data-mode="strip"] .viewer__title { font-size: 13vw; }
+}

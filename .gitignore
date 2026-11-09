@@ -1,0 +1,4 @@
+# служебное: скрипты для Figma и версии под claude.ai не публикуем
+figma/
+artifact/
+.DS_Store
