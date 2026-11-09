@@ -11,13 +11,14 @@
   <!-- временно Inter: фирменный ABC Favorit Pro подключим файлами, когда будет лицензия -->
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
+  <!-- карта импортов должна стоять раньше любой загрузки модулей, иначе "three" не находится -->
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }
+  </script>
   <!-- модули грузим сразу, параллельно со шрифтом, а не после разбора страницы -->
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
   <link rel="modulepreload" href="../main.js">
   <link rel="modulepreload" href="../cases.js">
-  <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }
-  </script>
 </head>
 <body>
   <div class="stage" id="stage" aria-label="Selected work"></div>
