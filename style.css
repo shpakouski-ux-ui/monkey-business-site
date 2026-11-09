@@ -112,7 +112,7 @@ html[data-layout="e"] .intro {
   inset: 0; width: auto; max-width: none; padding-bottom: 4vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
-html[data-layout="e"] .headline { font-size: clamp(44px, 5.8vw, 124px); }
+html[data-layout="e"] .headline { font-size: clamp(40px, min(5.8vw, 9.5vh), 124px); }
 html[data-layout="e"] .headline__accent { margin-left: 0; }
 html[data-layout="e"] .desc {
   position: absolute; left: 50%; bottom: clamp(28px, 2.9vw, 56px); translate: -50% 0; margin: 0; text-align: center;

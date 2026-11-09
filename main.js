@@ -13,10 +13,10 @@ const lerp = (a, b, k) => a + (b - a) * k;
 const LAYOUT = document.documentElement.dataset.layout || 'a';
 const RING = LAYOUT === 'e';
 const R_OPEN = 10;            // радиус раскрытого облака
-const R_COMPACT = RING ? 7.3 : 5;   // радиус сжатого: шар собирается в плотный ком, кольцо только чуть сужается
+const R_COMPACT = RING ? 8.6 : 5;   // радиус сжатого: шар собирается в плотный ком, кольцо только чуть сужается
 // карточка в раскрытом и сжатом виде: в шаре крупно, как в рефе; в кольце мельче, как у cipher.tv
 const SIZE_OPEN = RING ? 2.4 : 4.6, SIZE_COMPACT = RING ? 1.7 : 3.2;
-const TILT = RING ? .42 : .18;   // наклон по X в покое: кольцо видно эллипсом
+let TILT = RING ? .42 : .18;     // наклон по X в покое: кольцо видно эллипсом; на телефоне круче, места по высоте много
 const FOV = 24;               // узкий угол камеры = слабая перспектива, как у It's Nice That
 const AUTO_SPIN = .07;        // рад/с, собственное вращение
 const DRAG = .0052;           // рад на пиксель перетаскивания
@@ -138,6 +138,7 @@ function fit() {
   W = innerWidth; H = innerHeight;
   const wasMobile = mobile;
   mobile = W < 700;
+  if (RING) TILT = mobile ? .95 : .42;
   fitHeadline();
   renderer.setSize(W, H);
   camera.aspect = W / H;
@@ -145,9 +146,17 @@ function fit() {
   const areaR = W - Math.max(24, W * .029);
   let openPx;
   if (RING) {
-    // кольцо по центру экрана, заголовок в его пустой середине
-    cloudAt.x = W / 2; cloudAt.y = mobile ? H * .44 : H * .48;
-    openPx = mobile ? W * .4 : Math.min(W * .33, H * .62);
+    // кольцо вокруг заголовка: центр - центр слов, радиус всегда шире слов, даже в сжатом виде
+    const hb = document.querySelector('.headline').getBoundingClientRect();
+    const descTop = document.querySelector('.desc').getBoundingClientRect().top;
+    const top = document.querySelector('.top').getBoundingClientRect().bottom;
+    const gut = Math.max(16, W * .029);
+    cloudAt.x = W / 2; cloudAt.y = hb.top + hb.height / 2;
+    const minR = hb.width / 2 * 1.32 / (R_COMPACT / R_OPEN);        // сжатое кольцо не заходит внутрь слов
+    // по высоте кольцо наклонено: его полувысота около 0.62 радиуса, по ширине - 1.18 с учётом карточек
+    const vk = Math.sin(TILT) + .2;   // полувысота кольца в радиусах с учётом карточек
+    const fitR = Math.min(W * .36, (W / 2 - gut) / 1.18, (cloudAt.y - top) / vk, (descTop - 12 - cloudAt.y) / vk);
+    openPx = Math.max(minR, fitR);
   } else if (mobile) { cloudAt.x = W / 2; cloudAt.y = H * .42; openPx = W * .44; }
   else if (LAYOUT === 'c') {
     // заголовок строкой на всю ширину внизу, облако в свободной полосе над ним, правее центра
@@ -165,8 +174,8 @@ function fit() {
   }
   // раскрытое облако целиком в кадре: от центра до края экрана и шапки должно хватать места
   // на радиус плюс половину крупной ближней карточки (K - запас на это и на перспективу)
-  if (!mobile) {
-    const K = RING ? 1.18 : 1.42, gut = Math.max(24, W * .029);
+  if (!mobile && !RING) {
+    const K = 1.42, gut = Math.max(24, W * .029);
     const top = document.querySelector('.top').getBoundingClientRect().bottom - gut * .5;
     openPx = Math.min(openPx, (W - gut - cloudAt.x) / K, (cloudAt.x - gut) / K, (cloudAt.y - top) / K, (H - gut - cloudAt.y) / K);
   }
@@ -185,6 +194,7 @@ function fit() {
   camera.updateProjectionMatrix();
   scene.fog = new THREE.Fog(themeBg(), D - R_OPEN * .5, D + R_OPEN * 6);
   if (wasMobile !== mobile) {
+    rot.x = rot.tx = TILT;   // наклон кольца сразу нужный, без долгого доворота
     phase = 'wait';
     build();
     // вылет один раз и только когда картинки готовы: загрузка не ложится на анимацию
